@@ -21,6 +21,12 @@ class Ball:
     def get_width(self):
         return self.width
     
+    def get_horizontal_movement(self):
+        return self.horizontal_vel
+    
+    def get_vertical_movement(self):
+        return self.vertical_vel    
+
     def bounce_ball(self, orientation=0):
         if orientation == 0:
             self.horizontal_vel *= -1

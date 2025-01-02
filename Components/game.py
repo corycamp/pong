@@ -55,12 +55,22 @@ class Game:
         if keys[pygame.K_s]:
             if self.paddle_one.get_y_pos() + self.paddle_one.get_height() + self.border < self.screen.get_height():
                 self.paddle_one.move_down()  
+                
+    def cpu_movement(self): 
+        if self.ball.horizontal_vel > 0:
+            if self.ball.get_vertical_movement() < 0:
+                if self.paddle_two.get_y_pos() - self.border > 0:
+                    self.paddle_two.move_up()
+            if self.ball.get_vertical_movement() > 0:
+                if self.paddle_two.get_y_pos() + self.paddle_two.get_height() + self.border < self.screen.get_height():
+                    self.paddle_two.move_down()  
     
     def handle_ball_movement(self):
         self.ball.move_ball(0)
         self.ball.move_ball(1)
                 
     def handle_collision(self):
+        # Ball hitting front of paddle
         if self.ball.get_y_pos() > self.paddle_one.get_y_pos() and self.ball.get_y_pos() < self.paddle_one.get_y_pos() + self.paddle_one.get_height():
             if self.ball.get_x_pos() - self.ball.get_width()/2 == self.paddle_one.get_x_pos() + self.paddle_one.get_width():
                 self.ball.bounce_ball(0)
@@ -72,9 +82,9 @@ class Game:
                 self.ball.bounce_ball(1)
                 
         # Touches top and bottom borders
-        if self.ball.get_y_pos() - self.ball.get_width()/2 == self.border:
+        if self.ball.get_y_pos() - self.ball.get_width()/2 - 5 <=  self.border:
             self.ball.bounce_ball(1)
-        if self.ball.get_y_pos() + self.ball.get_width()/2 == self.screen.get_height():
+        if self.ball.get_y_pos() + self.ball.get_width()/2 + 5 >= self.screen.get_height():
             self.ball.bounce_ball(1)
             
     def reset_game(self):
@@ -99,6 +109,7 @@ class Game:
             self.handle_ball_movement()
             self.handle_collision()
             self.handle_match_round()
+            self.cpu_movement()
             pygame.display.flip()
             self.clock.tick(60) / 1000
         pygame.quit()

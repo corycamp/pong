@@ -8,8 +8,8 @@ class Game:
         pygame.display.set_caption('PONG')
         pygame.font.init()
         
-        # SETUP Variables
-        self.screen = pygame.display.set_mode((1500, 720))
+        # Setup Variables
+        self.screen = pygame.display.set_mode((1250, 720))
         self.my_font = pygame.font.SysFont('Arial', 80, True)
         self.clock = pygame.time.Clock()
         self.running = True
@@ -19,6 +19,7 @@ class Game:
         self.border = 20
         self.player_one_score = 0
         self.player_two_score = 0
+        self.last_collided = 0
 
         self.initialize_game(True)
         self.run()
@@ -31,6 +32,7 @@ class Game:
         
         #Initialize ball
         self.ball = Ball(self.screen.get_width()/2, self.screen.get_height()/2) 
+        self.last_collided = 0
         
     def screen_refresh(self):
         self.screen.fill("black") 
@@ -41,11 +43,24 @@ class Game:
         pygame.draw.rect(self.screen,"white",pygame.Rect(0,0,self.screen.get_width(),self.screen.get_height()), width=8)
         
         #Paddles
-        pygame.draw.rect(self.screen,self.paddle_one.get_color(),pygame.Rect(self.paddle_one.get_x_pos(), self.paddle_one.get_y_pos(), self.paddle_one.get_width(), self.paddle_one.get_height()), width=0)
-        pygame.draw.rect(self.screen,self.paddle_two.get_color(),pygame.Rect(self.paddle_two.get_x_pos(), self.paddle_two.get_y_pos(), self.paddle_two.get_width(), self.paddle_two.get_height()), width=0)
-     
+        paddle_one = pygame.draw.rect(self.screen,self.paddle_one.get_color(),pygame.Rect(self.paddle_one.get_x_pos(), self.paddle_one.get_y_pos(), self.paddle_one.get_width(), self.paddle_one.get_height()), width=0)
+        paddle_two = pygame.draw.rect(self.screen,self.paddle_two.get_color(),pygame.Rect(self.paddle_two.get_x_pos(), self.paddle_two.get_y_pos(), self.paddle_two.get_width(), self.paddle_two.get_height()), width=0)
+        
         #Ball
-        pygame.draw.circle(self.screen,self.ball.get_color(),(self.ball.get_x_pos(),self.ball.get_y_pos()), self.ball.get_width())
+        ball = pygame.draw.circle(self.screen,self.ball.get_color(),(self.ball.get_x_pos(),self.ball.get_y_pos()), self.ball.get_width())
+
+        collided = False
+        if paddle_one.colliderect(ball):
+            if self.last_collided != 1:
+                collided = True
+                self.last_collided = 1
+            
+        if paddle_two.colliderect(ball):
+            if self.last_collided != 2:
+                collided = True
+                self.last_collided = 2
+
+        self.handle_collision(collided)
         
     def handle_player_movement(self):
         keys = pygame.key.get_pressed()
@@ -69,17 +84,12 @@ class Game:
         self.ball.move_ball(0)
         self.ball.move_ball(1)
                 
-    def handle_collision(self):
-        # Ball hitting front of paddle
-        if self.ball.get_y_pos() > self.paddle_one.get_y_pos() and self.ball.get_y_pos() < self.paddle_one.get_y_pos() + self.paddle_one.get_height():
-            if self.ball.get_x_pos() - self.ball.get_width()/2 == self.paddle_one.get_x_pos() + self.paddle_one.get_width():
-                self.ball.bounce_ball(0)
-                self.ball.bounce_ball(1)
-        
-        if self.ball.get_y_pos() > self.paddle_two.get_y_pos() and self.ball.get_y_pos() < self.paddle_two.get_y_pos() + self.paddle_two.get_height():
-            if self.ball.get_x_pos() + self.ball.get_width()/2 == self.paddle_two.get_x_pos():
-                self.ball.bounce_ball(0)
-                self.ball.bounce_ball(1)
+    def handle_collision(self,collided):
+        if collided:
+            # print(f'Ball-Pos\nx:{self.ball.get_x_pos()}, y:{self.ball.get_y_pos()}')
+            # print(f'Paddle-Pos\nx:{self.paddle_one.get_x_pos()}, y:{self.paddle_one.get_y_pos()}')
+            self.ball.bounce_ball(0)
+            self.ball.bounce_ball(1)
                 
         # Touches top and bottom borders
         if self.ball.get_y_pos() - self.ball.get_width()/2 - 5 <=  self.border:
@@ -107,7 +117,6 @@ class Game:
             self.screen_refresh()
             self.handle_player_movement()
             self.handle_ball_movement()
-            self.handle_collision()
             self.handle_match_round()
             self.cpu_movement()
             pygame.display.flip()

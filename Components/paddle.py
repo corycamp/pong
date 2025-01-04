@@ -1,4 +1,5 @@
-
+from Components.ball import Ball
+from typing import Type
 class Paddle:
     def __init__(self, x_pos, y_pos, frame_rate):
         self.paddle_width = 30

@@ -10,7 +10,8 @@ class Game:
         
         # Setup Variables
         self.screen = pygame.display.set_mode((1250, 720))
-        self.my_font = pygame.font.SysFont('Arial', 80, True)
+        self.font_size = 80
+        self.my_font = pygame.font.SysFont('Arial', self.font_size, True)
         self.clock = pygame.time.Clock()
         self.running = True
         self.frame_rate = self.clock.tick(60) / 1000
@@ -20,7 +21,10 @@ class Game:
         self.player_one_score = 0
         self.player_two_score = 0
         self.last_collided = 0
+        self.mouse_pos = ''
 
+        self.start = False
+        self.page = 'menu'
         self.initialize_game(True)
         self.run()
         
@@ -36,8 +40,8 @@ class Game:
         
     def screen_refresh(self):
         self.screen.fill("black") 
-        self.screen.blit(self.my_font.render(f'{self.player_one_score}', True, "white"),(self.screen.get_width()/2 - 200, 50))
-        self.screen.blit(self.my_font.render(f'{self.player_two_score}', True, "white") ,(self.screen.get_width()/2 + 200, 50))
+        self.screen.blit(self.my_font.render(f'{self.player_one_score}', True, "white"),(self.screen.get_width()/2 - 200 - self.font_size / 2, 50))
+        self.screen.blit(self.my_font.render(f'{self.player_two_score}', True, "white") ,(self.screen.get_width()/2 + 200 - self.font_size / 2, 50))
         
         # Border
         pygame.draw.rect(self.screen,"white",pygame.Rect(0,0,self.screen.get_width(),self.screen.get_height()), width=8)
@@ -86,8 +90,6 @@ class Game:
                 
     def handle_collision(self,collided):
         if collided:
-            # print(f'Ball-Pos\nx:{self.ball.get_x_pos()}, y:{self.ball.get_y_pos()}')
-            # print(f'Paddle-Pos\nx:{self.paddle_one.get_x_pos()}, y:{self.paddle_one.get_y_pos()}')
             self.ball.bounce_ball(0)
             self.ball.bounce_ball(1)
                 
@@ -107,19 +109,52 @@ class Game:
         if self.ball.get_x_pos() + self.ball.get_width()/2 < 0:
             self.player_two_score += 1
             self.reset_game()
+
+    def run_game(self):
+        self.screen_refresh()
+        self.handle_player_movement()
+        self.handle_ball_movement()
+        self.handle_match_round()
+        self.cpu_movement()
         
-        
+    def main_menu(self, mouse):
+        if self.page == 'menu':
+            self.screen.fill("black")
+            spacing = 100
+            start = self.screen.blit(self.my_font.render('Start', True, "white"),(self.screen.get_width()/2 - self.font_size / 2, self.screen.get_height()/2 - spacing - self.font_size / 2))
+            options = self.screen.blit(self.my_font.render('Options', True, "white") ,(self.screen.get_width()/2 - self.font_size / 2,  self.screen.get_height()/2 - self.font_size / 2))
+            quit = self.screen.blit(self.my_font.render('Quit', True, "white") ,(self.screen.get_width()/2 - self.font_size / 2, self.screen.get_height()/2 + spacing - self.font_size / 2))
+            
+            if mouse != '':
+                if start.collidepoint(mouse[0],mouse[1]):
+                    self.start = True
+                if options.collidepoint(mouse[0], mouse[1]):
+                    self.page = 'options'
+                if quit.collidepoint(mouse[0], mouse[1]):
+                    self.running = False
+        elif self.page == 'options':
+            self.options_screen(mouse)
+                
+    def options_screen(self, mouse):
+        self.screen.fill("black")
+        back = self.screen.blit(self.my_font.render('Back', True, "white") ,(10, self.screen.get_height() - 100))
+        if mouse != '':
+            if back.collidepoint(mouse[0],mouse[1]):
+                self.page = 'menu'
+                
     def run(self):
         while self.running:
+            mouse = ''
             for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONUP:
+                    mouse = pygame.mouse.get_pos()
                 if event.type == pygame.QUIT:
                     self.running = False
-            self.screen_refresh()
-            self.handle_player_movement()
-            self.handle_ball_movement()
-            self.handle_match_round()
-            self.cpu_movement()
+            if self.start:
+                self.run_game()
+            else :
+                self.main_menu(mouse)
             pygame.display.flip()
-            self.clock.tick(60) / 1000
+            self.clock.tick(60) / 1000  
         pygame.quit()
             

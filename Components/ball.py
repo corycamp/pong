@@ -1,13 +1,13 @@
 import random
 
 class Ball:
-    def __init__(self, x_pos, y_pos):
+    def __init__(self, x_pos, y_pos, color):
         self.x = x_pos
         self.y = y_pos
         self.width = 20
         self.vertical_vel = 10 * random.choice([-1,1])
         self.horizontal_vel = 10  * random.choice([-1,1])
-        self.color = "white"
+        self.color = color
         
     def get_color(self):
         return self.color
@@ -38,3 +38,6 @@ class Ball:
             self.x += self.horizontal_vel
         elif orientation == 1:
             self.y += self.vertical_vel
+            
+    def set_color(self, color):
+        self.color = color

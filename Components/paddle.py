@@ -31,3 +31,6 @@ class Paddle:
     def get_height(self):
         return self.paddle_height
     
+    def set_color(self,color):
+        self.color = color
+    

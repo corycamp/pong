@@ -5,8 +5,10 @@ class Ball:
         self.x = x_pos
         self.y = y_pos
         self.width = 20
-        self.vertical_vel = 10 * random.choice([-1,1])
-        self.horizontal_vel = 10  * random.choice([-1,1])
+        self.base_speed = 10
+        self.angle = random.choice([-1,1])
+        self.vertical_vel = self.base_speed * self.angle
+        self.horizontal_vel = self.base_speed  * self.angle
         self.color = color
         
     def get_color(self):
@@ -41,3 +43,6 @@ class Ball:
             
     def set_color(self, color):
         self.color = color
+        
+    def set_angle(self,angle):
+        self.angle = angle

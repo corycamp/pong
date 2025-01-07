@@ -12,29 +12,29 @@ class Game:
         self.screen = pygame.display.set_mode((1250, 720))
         self.font_size = 80
         self.text_color = 'white'
+        self.main_color = 'black'
         self.my_font = pygame.font.SysFont('Arial', self.font_size, True)
         self.clock = pygame.time.Clock()
         self.running = True
         self.frame_rate = self.clock.tick(60) / 1000
+        self.mouse_pos = ''
+        self.start = False
         
         # Game config
         self.border = 20
         self.player_one_score = 0
         self.player_two_score = 0
         self.last_collided = 0
-        self.mouse_pos = ''
         self.control_scheme = 0
-        self.main_color = 'black'
         self.passes = 0
-
-        self.start = False
         self.page = 'menu'
-        self.last_page = 'menu'
+        self.last_page = self.page
+        
         self.initialize_game(True)
         self.run()
         
     def initialize_game(self, initial=False):
-         # Initialize players
+        #Initialize players
         if initial:
             self.paddle_one = Paddle(100, self.screen.get_height()/2, self.frame_rate)
             self.paddle_two = Paddle(self.screen.get_width() - 30 - 100, self.screen.get_height()/2, self.frame_rate)
@@ -42,6 +42,7 @@ class Game:
         #Initialize ball
         self.ball = Ball(self.screen.get_width()/2, self.screen.get_height()/2, self.text_color) 
         self.last_collided = 0
+        self.passes = 0
         
     def screen_refresh(self, mouse):
         self.screen.fill(self.main_color) 
@@ -54,6 +55,8 @@ class Game:
         
         # Border
         pygame.draw.rect(self.screen,self.text_color,pygame.Rect(0,0,self.screen.get_width(),self.screen.get_height()), width=8)
+        top_border = pygame.draw.rect(self.screen,self.main_color,pygame.Rect(0,0,self.screen.get_width(),self.border), width=0)
+        bottom_border = pygame.draw.rect(self.screen,self.main_color,pygame.Rect(0,self.screen.get_height()-self.border,self.screen.get_width(),20), width=0)
         
         #Paddles
         paddle_one = pygame.draw.rect(self.screen,self.paddle_one.get_color(),pygame.Rect(self.paddle_one.get_x_pos(), self.paddle_one.get_y_pos(), self.paddle_one.get_width(), self.paddle_one.get_height()), width=0)
@@ -72,6 +75,16 @@ class Game:
             if self.last_collided != 2:
                 collided = True
                 self.last_collided = 2
+        
+        if top_border.colliderect(ball):
+            print(self.last_collided)
+            if self.last_collided != 3:
+                self.last_collided = 3
+        
+        if bottom_border.colliderect(ball):
+            if self.last_collided != 4:
+                self.last_collided = 4      
+            
         self.handle_collision(collided)
         
         if mouse != '':
@@ -106,38 +119,59 @@ class Game:
         self.ball.move_ball(1)
                 
     def handle_collision(self,collided):
+        #Validates if the ball collided with a paddle and should be bounced back
         if collided:
+            self.get_collision_angle()
             self.passes += 1
             self.ball.bounce_ball(0)
             self.ball.bounce_ball(1)
         
-        if self.passes % 10 == 0 and self.passes != 0:
-            self.update_colors(True)
+        #Triggers bonus mode after consecutive passes
+        if (self.passes / 10) % 2 == 1 and self.passes != 0:
+            self.update_colors('black','white')
+        elif (self.passes / 10) % 2 == 0 :
+            self.update_colors('white', 'black')
                 
-        # Touches top and bottom borders
-        if self.ball.get_y_pos() - self.ball.get_width()/2 - 5 <=  self.border:
+        #Checks if the ball touches top and bottom border
+        if self.last_collided == 3 or self.last_collided == 4:
             self.ball.bounce_ball(1)
-        if self.ball.get_y_pos() + self.ball.get_width()/2 + 5 >= self.screen.get_height() - 25:
-            self.ball.bounce_ball(1)
+            self.last_collided = 0
+
+    
+    def get_collision_angle(self):
+        paddle = ''
+        if self.last_collided == 1:
+            paddle = self.paddle_one
+        elif self.last_collided == 2:
+            paddle = self.paddle_two
+        #Top
+        if self.ball.get_y_pos() <= paddle.get_y_pos() + 115 and  self.ball.get_y_pos() >= paddle.get_y_pos() + 85:
+            self.ball.set_angle(0)
+        elif self.ball.get_y_pos() < paddle.get_y_pos() + 85 and self.ball.get_y_pos() >= paddle.get_y_pos() + 50:
+            self.ball.set_angle(-1.5)
+        elif self.ball.get_y_pos() < paddle.get_y_pos() + 50:
+            self.ball.set_angle(-2.5)
             
+        #Bottom
+        if self.ball.get_y_pos() > paddle.get_y_pos() + 115 and self.ball.get_y_pos() <= paddle.get_y_pos() + 150:
+            self.ball.set_angle(1.5)
+        elif self.ball.get_y_pos() >= paddle.get_y_pos() + 150:
+            self.ball.set_angle(2.5)
+                
+        
     def reset_game(self):
         self.initialize_game()
     
-    def update_colors(self, change):
-        if change:
-            self.text_color = 'black'
-            self.main_color = 'white'
-            self.paddle_one.set_color('black')
-            self.paddle_two.set_color('black')
-            self.ball.set_color('black')
-        else:
-            self.text_color = 'white'
-            self.main_color = 'black'
-            self.paddle_one.set_color('white')
-            self.paddle_two.set_color('white')
-            self.ball.set_color('white')
+    def update_colors(self, primary, secondary):
+        #Update the colors of the components
+        self.text_color = primary
+        self.main_color = secondary
+        self.paddle_one.set_color(primary)
+        self.paddle_two.set_color(primary)
+        self.ball.set_color(primary)
             
     def handle_match_round(self):
+        #Checks if the ball went pass a paddle to give a point
         if self.ball.get_x_pos() - self.ball.get_width()/2 > self.screen.get_width():
             self.player_one_score += 1
             self.reset_game()
@@ -157,15 +191,16 @@ class Game:
             self.screen.fill(self.main_color)
             spacing = 100
             start_button_text = 'Start'
-            
+            #Changes start to resume button for paused game
             if self.page == 'pause':
                 start_button_text = 'Resume'
-            
+                
             # Start Menu
             start = self.screen.blit(self.my_font.render(start_button_text, True, self.text_color),(self.screen.get_width()/2 - self.font_size / 2, self.screen.get_height()/2 - spacing - self.font_size / 2))
             options = self.screen.blit(self.my_font.render('Options', True, self.text_color) ,(self.screen.get_width()/2 - self.font_size / 2,  self.screen.get_height()/2 - self.font_size / 2))
             quit = self.screen.blit(self.my_font.render('Quit', True, self.text_color) ,(self.screen.get_width()/2 - self.font_size / 2, self.screen.get_height()/2 + spacing - self.font_size / 2))
             
+            #Controls menu item selection
             if mouse != '':
                 if start.collidepoint(mouse[0],mouse[1]):
                     self.start = True
@@ -181,30 +216,23 @@ class Game:
         self.screen.fill(self.main_color)
         textObj = game_text['options_page']
         options_font = pygame.font.SysFont('Arial', 40, True)
-        option_one_fill = 0
-        option_two_fill = 0
         
-        if self.control_scheme == 0:
-            option_one_fill = 0
-            option_two_fill = 1
-        elif self.control_scheme == 1:
-            option_one_fill = 1
-            option_two_fill = 0
-        
+        #Options page text and back button
         back = self.screen.blit(options_font.render('Back', True, self.text_color) ,(15, self.screen.get_height() - 50))
         self.screen.blit(self.my_font.render('Options', True, self.text_color) ,(self.screen.get_width()/2 - 150, 10))
         self.screen.blit(options_font.render(f'{textObj['intro']}', True, self.text_color), (self.screen.get_width() / 2 - 500, 150))
         
         #First control scheme option
-        option_one = pygame.draw.rect(self.screen,self.text_color,pygame.Rect(self.screen.get_width() / 2 - 200, self.screen.get_height() / 2 - 100, 50, 50), width=option_one_fill)
+        option_one = pygame.draw.rect(self.screen,self.text_color,pygame.Rect(self.screen.get_width() / 2 - 200, self.screen.get_height() / 2 - 100, 50, 50), width=0 if self.control_scheme == 0 else 1)
         self.screen.blit(options_font.render(f'{textObj['control_scheme_one_up']}', True, self.text_color),(self.screen.get_width()/2 - 100, self.screen.get_height()/2 - 125))
         self.screen.blit(options_font.render(f'{textObj['control_scheme_one_down']}', True, self.text_color),(self.screen.get_width()/2 - 100, self.screen.get_height()/2 - 80))
         
         #Second control scheme option
-        option_two = pygame.draw.rect(self.screen,self.text_color,pygame.Rect(self.screen.get_width() / 2 - 200, self.screen.get_height() / 2 + 10, 50, 50), width=option_two_fill)
+        option_two = pygame.draw.rect(self.screen,self.text_color,pygame.Rect(self.screen.get_width() / 2 - 200, self.screen.get_height() / 2 + 10, 50, 50), width=1 if self.control_scheme == 0 else 0)
         self.screen.blit(options_font.render(f'{textObj['control_scheme_two_up']}', True, self.text_color),(self.screen.get_width()/2 - 100, self.screen.get_height()/2 - 5))
         self.screen.blit(options_font.render(f'{textObj['control_scheme_two_down']}', True, self.text_color),(self.screen.get_width()/2 - 100, self.screen.get_height()/2 + 40))
         
+        #Mouse controls for control selection and navigating back to the menu
         if mouse != '':
             if back.collidepoint(mouse[0],mouse[1]):
                 if self.last_page == 'menu':
